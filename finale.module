@@ -1,0 +1,16 @@
+<?php
+
+/**
+ * Implements hook_theme().
+ */
+function finale_theme($existing, $type, $theme, $path): array {
+
+  return [
+    'awesome-form' => [
+      'render element' => 'form',
+      'variables' => [
+        'form'=> NULL,
+      ],
+    ],
+  ];
+}

@@ -1,0 +1,7 @@
+finale.content:
+  path: 'doktor/form'
+  defaults:
+    _controller: '\Drupal\finale\Controller\FinaleController::content'
+    _title: 'Awesome form!'
+  requirements:
+    _permission: 'access content'
