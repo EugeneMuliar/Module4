@@ -31,19 +31,39 @@ class FinaleForm extends FormBase {
     $form['add_row'] = [
       '#type' => 'submit',
       '#value' => $this->t('Add Year'),
+      '#submit' => ['::addRow'],
+      '#ajax' => [
+        'callback' => '::ajaxReloadForm',
+        'event' => 'click',
+        'wrapper' => 'my-form',
+        'progress' => [
+          'type' => 'none',
+        ],
+      ],
     ];
 
     $form['add_table'] = [
       '#type' => 'submit',
       '#value' => $this->t('Add Table'),
+      '#submit' => ['::addTable'],
+      '#ajax' => [
+        'callback' => '::ajaxReloadForm',
+        'event' => 'click',
+        'wrapper' => 'my-form',
+        'progress' => [
+          'type' => 'none',
+        ],
+      ],
     ];
 
-    $this->buildTable($form, $form_state);
+    $this->buildTable($form, $form_state, $this->tableCount);
 
     $form['submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Submit'),
     ];
+    $form['#prefix'] = '<div id="my-form" >';
+    $form['#suffix'] = '</div>';
 
     return $form;
   }
@@ -52,7 +72,7 @@ class FinaleForm extends FormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-
+    // TODO
   }
 
   public function createHeader() {
@@ -78,22 +98,34 @@ class FinaleForm extends FormBase {
     ];
   }
 
-
   public function calculateQuarter(array &$form, FormStateInterface $form_state) {
-
+    // TODO
   }
 
-  public function buildTable(array &$form, FormStateInterface $form_state) {
+  public function ajaxReloadForm(array &$form, FormStateInterface $form_state){
+    return $form;
+  }
+
+  public function addRow(array &$form, FormStateInterface $form_state) {
+    $this->rowCount++;
+    $form_state->setRebuild();
+  }
+
+  public function addTable(array &$form, FormStateInterface $form_state) {
+    $this->tableCount++;
+    $form_state->setRebuild();
+  }
+
+  public function buildTable(array &$form, FormStateInterface $form_state, int $tableCount) {
     $this->createHeader();
-    for ($i = 0; $i < $this->tableCount; $i++) {
+    for ($i = 0; $i < $tableCount; $i++) {
       $tableID = 'table-id-' . ($i + 1);
       $form[$tableID] = [
         '#type' => 'table',
         '#header' => $this->header,
       ];
-      $this->createRow( $form, $form_state, $tableID);
+      $this->buildRow( $form, $form_state, $tableID, $this->rowCount);
     }
-
   }
 
   /**
@@ -103,12 +135,14 @@ class FinaleForm extends FormBase {
    * @param string $tableID
    * @return void
    */
-  public function createRow(array &$form, FormStateInterface $form_state, string $tableID) {
-    for($i = 0; $i < $this->rowCount; $i++) {
+  public function buildRow(array &$form, FormStateInterface $form_state, string $tableID, int $rowCount) {
+    for($i = 0; $i < $rowCount; $i++) {
       $rowID = 'row-id-' . ($i + 1);
-      $header_arr_key = array_keys($this->header); // Get keys from header.
+      $header_arr_keys = array_keys($this->header); // Get keys from header.
+
       for ($j = 0; $j < count($this->header); $j++) {
-        $colID = $header_arr_key[$j];
+        $colID = $header_arr_keys[$j];
+
         switch ($colID) {
           case 'year':
             $form[$tableID][$rowID][$colID] = [
@@ -121,6 +155,7 @@ class FinaleForm extends FormBase {
           case 'q2':
           case 'q3':
           case 'q4':
+          case 'ytd':
             $form[$tableID][$rowID][$colID] = [
               "#type" => 'number',
               '#disabled' => TRUE,
