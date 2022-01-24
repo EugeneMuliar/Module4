@@ -8,8 +8,7 @@ use Drupal\Core\Form\FormStateInterface;
 /**
  * Create Awesome form.
  */
-class FinaleForm extends FormBase
-{
+class FinaleForm extends FormBase {
 
   protected $header;
 
@@ -20,7 +19,6 @@ class FinaleForm extends FormBase
   protected $tableCount = 1;
 
   protected $rowCount = 1;
-
 
   /**
    * {@inheritdoc}
@@ -68,12 +66,11 @@ class FinaleForm extends FormBase
     $form['submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Submit'),
-      '#submit' => ['::calculateQuarter'],
-      '#ajax' => [
-        'callback' => '::ajaxReloadForm',
-        'event' => 'click',
-        'wrapper' => 'form-wrapper'
-      ],
+//      '#ajax' => [
+//        'callback' => '::ajaxReloadForm',
+//        'event' => 'click',
+//        'wrapper' => 'form-wrapper'
+//      ],
     ];
     $form['#prefix'] = '<div id="form-wrapper">';
     $form['#suffix'] = '</div>';
@@ -84,13 +81,61 @@ class FinaleForm extends FormBase
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, FormStateInterface $form_state)
-  {
-    // TODO
+  public function submitForm(array &$form, FormStateInterface $form_state) {
+    for($i = 1; $i <= $this->tableCount; $i++) {
+      $tableID = "table-$i";
+      for($j = 1; $j <= $this->rowCount; $j++) {
+        $rowID = "row-$j";
+        $months = [];
+
+        foreach ($this->inputData as $month) {
+          $monthVal = $form_state->getValue([$tableID, $rowID, "col-$month"]);
+          $months[$month] = (int) $monthVal;
+        }
+
+        $q1 = (($months['jan'] + $months['feb'] + $months['mar']) + 1) / 3;
+        $q2 = (($months['apr'] + $months['may'] + $months['jun']) + 1) / 3;
+        $q3 = (($months['jul'] + $months['aug'] + $months['sep']) + 1) / 3;
+        $q4 = (($months['oct'] + $months['nov'] + $months['dec']) + 1) / 3;
+        $ytd = (($q1 + $q2 + $q3 + $q4) + 1 ) / 4;
+
+        $form_state->setValue([$tableID,$rowID,"col-q1"], $q1 );
+        $form_state->setValue([$tableID,$rowID,"col-q2"], $q2 );
+        $form_state->setValue([$tableID,$rowID,"col-q3"], $q3 );
+        $form_state->setValue([$tableID,$rowID,"col-q4"], $q4 );
+        $form_state->setValue([$tableID,$rowID,"col-ytd"], $ytd );
+
+        $form_state->setRebuild();
+      }
+    }
   }
 
-  public function createHeader()
-  {
+  public function validateForm(array &$form, FormStateInterface $form_state) {
+    $tables = [];
+    for($table = 1; $table <= $this->tableCount; $table++) {
+      $tableID = "table-$table";
+      for($row = 1; $row <= $this->rowCount; $row++) {
+        $rowID = "row-$row";
+        foreach ($this->inputData as $month) {
+          $monthVal = $form_state->getValue([$tableID, $rowID, "col-$month"]);
+          if (!empty($monthVal)) {
+            $tables[$table][$row][$month] = (int) $monthVal;
+          }
+        }
+      }
+    }
+    if ($this->rowCount == 1 && $this->tableCount > 1) {
+      for($table = 1; $table < $this->tableCount; $table++) {
+        $arr_diff = array_diff_key($tables[$table][1], $tables[$table+1][1]);
+        if($arr_diff != []) {
+          var_dump($arr_diff); die(); // Message here.
+        }
+      }
+    }
+//      var_dump($tables); die();
+  }
+
+  public function createHeader() {
     $this->header = [
       'year' => $this->t('Year'),
       'jan' => $this->t('Jan'),
@@ -120,33 +165,6 @@ class FinaleForm extends FormBase
     $this->calculatedData = ['q1', 'q2', 'q3', 'q4', 'ytd',];
   }
 
-  public function calculateQuarter(array &$form, FormStateInterface $form_state) {
-    for($i = 1; $i <= $this->tableCount; $i++) {
-      $tableID = "table-$i";
-      for($j = 1; $j <= $this->rowCount; $j++) {
-        $rowID = "row-$j";
-        $months = [];
-        foreach ($this->inputData as $month) {
-          $months[$month] = (int) $form_state->getValue(["$tableID","$rowID","col-$month"]);
-        }
-        $q1 = (($months['jan'] + $months['feb'] + $months['mar']) + 1) / 3;
-        $q2 = (($months['apr'] + $months['may'] + $months['jun']) + 1) / 3;
-        $q3 = (($months['jul'] + $months['aug'] + $months['sep']) + 1) / 3;
-        $q4 = (($months['oct'] + $months['nov'] + $months['dec']) + 1) / 3;
-        $year = (($q1 + $q2 + $q3 + $q4) + 1 ) / 4;
-
-        $form_state->setValue(["$tableID","$rowID","col-q1"], $q1 );
-        $form_state->setValue(["$tableID","$rowID","col-q2"], $q2 );
-        $form_state->setValue(["$tableID","$rowID","col-q3"], $q3 );
-        $form_state->setValue(["$tableID","$rowID","col-q4"], $q4 );
-        $form_state->setValue(["$tableID","$rowID","col-ytd"], $year );
-
-        $form_state->setRebuild();
-
-      }
-    }
-  }
-
   public function ajaxReloadForm(array &$form, FormStateInterface $form_state) {
     return $form;
   }
@@ -161,8 +179,7 @@ class FinaleForm extends FormBase
     $form_state->setRebuild();
   }
 
-  public function buildTable(array &$form, FormStateInterface $form_state, int $tableCount)
-  {
+  public function buildTable(array &$form, FormStateInterface $form_state, int $tableCount) {
     $this->createHeader();
     for ($i = 1; $i <= $tableCount; $i++) {
       $tableID = "table-$i";
@@ -182,7 +199,7 @@ class FinaleForm extends FormBase
    * @return void
    */
   public function buildRow(array &$form, FormStateInterface $form_state, string $tableID, int $rowCount) {
-    for ($i = 1; $i <= $rowCount; $i++) {
+    for ($i = $rowCount; $i > 0 ; $i--) {
       $rowID = "row-$i";
 
       foreach ($this->header as $colName => $value) {
@@ -192,8 +209,9 @@ class FinaleForm extends FormBase
           '#step' => '0.01',
         ];
         if (in_array($colName, $this->calculatedData)) {
+          $value = round($form_state->getValue(["$tableID","$rowID","$colID"]), 2);
           $form[$tableID][$rowID][$colID]['#disabled'] = TRUE;
-          $form[$tableID][$rowID][$colID]['#default_value'] =  round($form_state->getValue(["$tableID","$rowID","$colID"]),   2);
+          $form[$tableID][$rowID][$colID]['#default_value'] =  $value;
         }
         elseif ($colName == "year") {
           $form[$tableID][$rowID][$colID]['#default_value'] = date('Y', strtotime("-$i year"));
