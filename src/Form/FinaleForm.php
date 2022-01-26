@@ -222,7 +222,7 @@ class FinaleForm extends FormBase {
         }
         // If there are more than 1 ending cells, show error.
         if ($endOfFilling > 1) {
-          $form_state->setErrorByName("table", "There are empty parts.");
+          $form_state->setErrorByName("empty_parts", "There are empty parts.");
         }
       }
     }
@@ -235,7 +235,7 @@ class FinaleForm extends FormBase {
         $arr_diff_2 = array_diff_key($clearTable[$table + 1][1], $clearTable[1][1]);
         // Check is there a difference between tables.
         if ($arr_diff_1 != [] || $arr_diff_2 != []) {
-          $form_state->setErrorByName("form", "Tables are not similar.");
+          $form_state->setErrorByName("tables_not_similar", "Tables are not similar.");
         }
       }
     }
@@ -276,7 +276,7 @@ class FinaleForm extends FormBase {
   public function clearTable(array $tables): array {
     $clearTable = [];
     for ($table = 1; $table <= count($tables); $table++) {
-      // Add null elements in array but leave 0.
+      // Clear null elements in array but leave 0.
       $clearTable[$table][1] = array_filter($tables[$table][1], function ($value) {
         return !is_null($value);
       });
