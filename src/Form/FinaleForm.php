@@ -56,7 +56,7 @@ class FinaleForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public static function create(ContainerInterface $container) {
+  public static function create(ContainerInterface $container): FinaleForm {
     $instance = parent::create($container);
     $instance->setMessenger($container->get('messenger'));
     return $instance;
@@ -65,7 +65,7 @@ class FinaleForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function getFormId() {
+  public function getFormId(): string {
     return 'awesome_form';
   }
 
@@ -244,7 +244,7 @@ class FinaleForm extends FormBase {
   /**
    * Return new array of values from table.
    */
-  public function getArrayOfValues(FormStateInterface $form_state) {
+  public function getArrayOfValues(FormStateInterface $form_state): array {
     $tables = [];
     for ($table = 1; $table <= $this->tableCount; $table++) {
       $tableID = "table-$table";
@@ -273,7 +273,7 @@ class FinaleForm extends FormBase {
    * @return array
    *   Array without null values.
    */
-  public function clearTable(array $tables) {
+  public function clearTable(array $tables): array {
     $clearTable = [];
     for ($table = 1; $table <= count($tables); $table++) {
       // Add null elements in array but leave 0.
@@ -287,7 +287,7 @@ class FinaleForm extends FormBase {
   /**
    * Reload form with ajax.
    */
-  public function ajaxReloadForm(array &$form, FormStateInterface $form_state) {
+  public function ajaxReloadForm(array &$form, FormStateInterface $form_state): array {
     return $form;
   }
 
