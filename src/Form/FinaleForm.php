@@ -54,9 +54,16 @@ class FinaleForm extends FormBase {
   protected $messenger;
 
   /**
+   * For checking errors.
+   *
+   * @var bool
+   */
+  protected $errors;
+
+  /**
    * {@inheritdoc}
    */
-  public static function create(ContainerInterface $container): FinaleForm {
+  public static function create(ContainerInterface $container) {
     $instance = parent::create($container);
     $instance->setMessenger($container->get('messenger'));
     return $instance;
@@ -222,7 +229,9 @@ class FinaleForm extends FormBase {
         }
         // If there are more than 1 ending cells, show error.
         if ($endOfFilling > 1) {
-          $form_state->setErrorByName("empty_parts", "There are empty parts.");
+//          $form_state->setErrorByName("empty_parts", "There are empty parts.");
+          $this->messenger->addError("There are empty parts.");
+          $this->errors = TRUE;
         }
       }
     }
@@ -235,7 +244,9 @@ class FinaleForm extends FormBase {
         $arr_diff_2 = array_diff_key($clearTable[$table + 1][1], $clearTable[1][1]);
         // Check is there a difference between tables.
         if ($arr_diff_1 != [] || $arr_diff_2 != []) {
-          $form_state->setErrorByName("tables_not_similar", "Tables are not similar.");
+//          $form_state->setErrorByName("tables_not_similar", "Tables are not similar.");
+          $this->messenger->addError("Tables are not similar.");
+          $this->errors = TRUE;
         }
       }
     }
@@ -311,7 +322,7 @@ class FinaleForm extends FormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    if (!$form_state->hasAnyErrors()) {
+    if (!$this->errors) {
       for ($table = 1; $table <= $this->tableCount; $table++) {
         $tableID = "table-$table";
         for ($row = 1; $row <= $this->rowCount; $row++) {
