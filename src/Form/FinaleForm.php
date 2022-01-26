@@ -208,7 +208,7 @@ class FinaleForm extends FormBase {
       foreach ($table as $row) {
         foreach ($this->inputData as $month) {
           // Check every cell.
-          if (!empty($row[$month]) || $row[$month] === 0) {
+          if (!is_null($row[$month])) {
             $currentCell = TRUE;
           }
           else {
