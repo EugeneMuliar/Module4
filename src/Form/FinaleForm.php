@@ -47,13 +47,6 @@ class FinaleForm extends FormBase {
   protected $rowCount = 1;
 
   /**
-   * For dependency injection.
-   *
-   * @var \Drupal\Core\Messenger\Messenger
-   */
-  protected $messenger;
-
-  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
@@ -159,38 +152,38 @@ class FinaleForm extends FormBase {
   public function buildTable(int $tableCount, array &$form, FormStateInterface $form_state) {
     $this->createHeader();
     for ($table = 1; $table <= $tableCount; $table++) {
-      $tableID = "table-$table";
+      $table_ID = "table-$table";
       // Create table.
-      $form[$tableID] = [
+      $form[$table_ID] = [
         '#type' => 'table',
         '#header' => $this->header,
       ];
-      $this->buildRow($tableID, $this->rowCount, $form, $form_state);
+      $this->buildRow($table_ID, $this->rowCount, $form, $form_state);
     }
   }
 
   /**
    * Build rows for a table.
    */
-  public function buildRow(string $tableID, int $rowCount, array &$form, FormStateInterface $form_state) {
+  public function buildRow(string $table_ID, int $rowCount, array &$form, FormStateInterface $form_state) {
     for ($row = $rowCount; $row > 0; $row--) {
-      $rowID = "row-$row";
+      $row_ID = "row-$row";
 
       foreach ($this->header as $colName => $value) {
-        $colID = "col-$colName";
-        $form[$tableID][$rowID][$colID] = [
+        $col_ID = "col-$colName";
+        $form[$table_ID][$row_ID][$col_ID] = [
           '#type' => 'number',
           '#step' => '0.01',
         ];
         if (in_array($colName, $this->calculatedData)) {
-          $value = round($form_state->getValue([$tableID, $rowID, $colID]), 2);
-          $form[$tableID][$rowID][$colID]['#disabled'] = TRUE;
-          $form[$tableID][$rowID][$colID]['#default_value'] = $value;
+          $value = round($form_state->getValue([$table_ID, $row_ID, $col_ID]), 2);
+          $form[$table_ID][$row_ID][$col_ID]['#disabled'] = TRUE;
+          $form[$table_ID][$row_ID][$col_ID]['#default_value'] = $value;
         }
         elseif ($colName == "year") {
           $year = date('Y', strtotime("-$row year"));
-          $form[$tableID][$rowID][$colID]['#default_value'] = $year;
-          $form[$tableID][$rowID][$colID]['#disabled'] = TRUE;
+          $form[$table_ID][$row_ID][$col_ID]['#default_value'] = $year;
+          $form[$table_ID][$row_ID][$col_ID]['#disabled'] = TRUE;
         }
       }
     }
@@ -204,28 +197,31 @@ class FinaleForm extends FormBase {
 
     // Validate on empty parts.
     foreach ($tables as $table) {
+      // Reverse because we get years in reverse order.
+      $table = array_reverse($table);
+      // To save previous state.
       $prevCell = FALSE;
-      $currentCell = FALSE;
-      $endOfFilling = 0;
+      // To check on gaps.
+      $endOfFilling = FALSE;
+      // Check every cell to find gaps.
       foreach ($table as $row) {
         foreach ($this->inputData as $month) {
           // Check every cell.
           if (!is_null($row[$month])) {
             $currentCell = TRUE;
+            if ($endOfFilling) {
+              $form_state->setErrorByName("empty_parts", "There are empty parts.");
+            }
           }
           else {
             $currentCell = FALSE;
             if ($prevCell) {
               // The ending of filled cells.
-              $endOfFilling++;
+              $endOfFilling = TRUE;
             }
           }
           $prevCell = $currentCell;
         }
-      }
-      // If there are more than 1 ending cells, show error.
-      if ($endOfFilling > 1) {
-        $form_state->setErrorByName("empty_parts", "There are empty parts.");
       }
     }
     // Validate one-row tables if they are similar.
@@ -249,13 +245,13 @@ class FinaleForm extends FormBase {
   public function getArrayOfValues(FormStateInterface $form_state): array {
     $tables = [];
     for ($table = 1; $table <= $this->tableCount; $table++) {
-      $tableID = "table-$table";
+      $table_ID = "table-$table";
       for ($row = 1; $row <= $this->rowCount; $row++) {
-        $rowID = "row-$row";
+        $row_ID = "row-$row";
         foreach ($this->inputData as $month) {
-          $monthVal = $form_state->getValue([$tableID, $rowID, "col-$month"]);
+          $monthVal = $form_state->getValue([$table_ID, $row_ID, "col-$month"]);
           if (!empty($monthVal) || $monthVal === "0") {
-            $tables[$table][$row][$month] = intval($monthVal);
+            $tables[$table][$row][$month] = (int) $monthVal;
           }
           else {
             $tables[$table][$row][$month] = NULL;
@@ -315,13 +311,13 @@ class FinaleForm extends FormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
     if (!$form_state->hasAnyErrors()) {
       for ($table = 1; $table <= $this->tableCount; $table++) {
-        $tableID = "table-$table";
+        $table_ID = "table-$table";
         for ($row = 1; $row <= $this->rowCount; $row++) {
-          $rowID = "row-$row";
+          $row_ID = "row-$row";
           $months = [];
           // Fill array with values from table.
           foreach ($this->inputData as $month) {
-            $monthVal = $form_state->getValue([$tableID, $rowID, "col-$month"]);
+            $monthVal = $form_state->getValue([$table_ID, $row_ID, "col-$month"]);
             $months[$month] = (int) $monthVal;
           }
 
@@ -331,11 +327,11 @@ class FinaleForm extends FormBase {
           $q4 = (($months['oct'] + $months['nov'] + $months['dec']) + 1) / 3;
           $ytd = (($q1 + $q2 + $q3 + $q4) + 1) / 4;
 
-          $form_state->setValue([$tableID, $rowID, "col-q1"], $q1);
-          $form_state->setValue([$tableID, $rowID, "col-q2"], $q2);
-          $form_state->setValue([$tableID, $rowID, "col-q3"], $q3);
-          $form_state->setValue([$tableID, $rowID, "col-q4"], $q4);
-          $form_state->setValue([$tableID, $rowID, "col-ytd"], $ytd);
+          $form_state->setValue([$table_ID, $row_ID, "col-q1"], $q1);
+          $form_state->setValue([$table_ID, $row_ID, "col-q2"], $q2);
+          $form_state->setValue([$table_ID, $row_ID, "col-q3"], $q3);
+          $form_state->setValue([$table_ID, $row_ID, "col-q4"], $q4);
+          $form_state->setValue([$table_ID, $row_ID, "col-ytd"], $ytd);
 
           $this->messenger->addStatus('Valid.');
           $form_state->setRebuild();
