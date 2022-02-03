@@ -54,13 +54,6 @@ class FinaleForm extends FormBase {
   protected $messenger;
 
   /**
-   * For checking errors.
-   *
-   * @var bool
-   */
-  protected $errors;
-
-  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
@@ -84,6 +77,7 @@ class FinaleForm extends FormBase {
       '#type' => 'submit',
       '#value' => $this->t('Add Year'),
       '#submit' => ['::addRow'],
+      '#limit_validation_errors' => [],
       '#ajax' => [
         'callback' => '::ajaxReloadForm',
         'event' => 'click',
@@ -98,6 +92,7 @@ class FinaleForm extends FormBase {
       '#type' => 'submit',
       '#value' => $this->t('Add Table'),
       '#submit' => ['::addTable'],
+      '#limit_validation_errors' => [],
       '#ajax' => [
         'callback' => '::ajaxReloadForm',
         'event' => 'click',
@@ -229,9 +224,7 @@ class FinaleForm extends FormBase {
         }
         // If there are more than 1 ending cells, show error.
         if ($endOfFilling > 1) {
-//          $form_state->setErrorByName("empty_parts", "There are empty parts.");
-          $this->messenger->addError("There are empty parts.");
-          $this->errors = TRUE;
+          $form_state->setErrorByName("empty_parts", "There are empty parts.");
         }
       }
     }
@@ -244,9 +237,7 @@ class FinaleForm extends FormBase {
         $arr_diff_2 = array_diff_key($clearTable[$table + 1][1], $clearTable[1][1]);
         // Check is there a difference between tables.
         if ($arr_diff_1 != [] || $arr_diff_2 != []) {
-//          $form_state->setErrorByName("tables_not_similar", "Tables are not similar.");
-          $this->messenger->addError("Tables are not similar.");
-          $this->errors = TRUE;
+          $form_state->setErrorByName("tables_not_similar", "Tables are not similar.");
         }
       }
     }
@@ -322,7 +313,7 @@ class FinaleForm extends FormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    if (!$this->errors) {
+    if (!$form_state->hasAnyErrors()) {
       for ($table = 1; $table <= $this->tableCount; $table++) {
         $tableID = "table-$table";
         for ($row = 1; $row <= $this->rowCount; $row++) {
