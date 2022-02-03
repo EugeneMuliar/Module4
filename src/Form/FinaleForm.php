@@ -222,10 +222,10 @@ class FinaleForm extends FormBase {
           }
           $prevCell = $currentCell;
         }
-        // If there are more than 1 ending cells, show error.
-        if ($endOfFilling > 1) {
-          $form_state->setErrorByName("empty_parts", "There are empty parts.");
-        }
+      }
+      // If there are more than 1 ending cells, show error.
+      if ($endOfFilling > 1) {
+        $form_state->setErrorByName("empty_parts", "There are empty parts.");
       }
     }
     // Validate one-row tables if they are similar.
