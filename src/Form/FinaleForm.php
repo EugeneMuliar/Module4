@@ -181,7 +181,7 @@ class FinaleForm extends FormBase {
           $form[$table_ID][$row_ID][$col_ID]['#default_value'] = $value;
         }
         elseif ($colName == "year") {
-          $year = date('Y', strtotime("-$row year"));
+          $year = date('Y', strtotime("-" . ($row - 1) . "year"));
           $form[$table_ID][$row_ID][$col_ID]['#default_value'] = $year;
           $form[$table_ID][$row_ID][$col_ID]['#disabled'] = TRUE;
         }
@@ -209,6 +209,7 @@ class FinaleForm extends FormBase {
           // Check every cell.
           if (!is_null($row[$month])) {
             $currentCell = TRUE;
+            // If there is already ending cells, throw error.
             if ($endOfFilling) {
               $form_state->setErrorByName("empty_parts", "There are empty parts.");
             }
@@ -224,18 +225,21 @@ class FinaleForm extends FormBase {
         }
       }
     }
-    // Validate one-row tables if they are similar.
-    if ($this->rowCount == 1 && $this->tableCount > 1) {
-      $clearTable = $this->clearTable($tables);
-      for ($table = 1; $table < count($clearTable); $table++) {
-        // Get difference from two rows.
-        $arr_diff_1 = array_diff_key($clearTable[1][1], $clearTable[$table + 1][1]);
-        $arr_diff_2 = array_diff_key($clearTable[$table + 1][1], $clearTable[1][1]);
-        // Check is there a difference between tables.
+
+    // Validate  tables if they are similar.
+    // Get array without null values.
+    $clearTable = $this->clearTable($tables);
+    for ($table = 1; $table < count($clearTable); $table++) {
+      for ($row = 1; $row <= count($clearTable[$table]); $row++) {
+        // Get arrays-keys difference between filled columns.
+        $arr_diff_1 = array_diff_key($clearTable[1][$row], $clearTable[$table + 1][$row]);
+        $arr_diff_2 = array_diff_key($clearTable[$table + 1][$row], $clearTable[1][$row]);
+        // Check is there a difference between arrays-keys.
         if ($arr_diff_1 != [] || $arr_diff_2 != []) {
           $form_state->setErrorByName("tables_not_similar", "Tables are not similar.");
         }
       }
+
     }
   }
 
@@ -274,10 +278,13 @@ class FinaleForm extends FormBase {
   public function clearTable(array $tables): array {
     $clearTable = [];
     for ($table = 1; $table <= count($tables); $table++) {
-      // Clear null elements in array but leave 0.
-      $clearTable[$table][1] = array_filter($tables[$table][1], function ($value) {
-        return !is_null($value);
-      });
+      // Fill array of values from table.
+      for ($row = 1; $row <= count($tables[$table]); $row++) {
+        // Add array of row values and filter null values.
+        $clearTable[$table][$row] = array_filter($tables[$table][$row], function ($value) {
+          return !is_null($value);
+        });
+      }
     }
     return $clearTable;
   }
